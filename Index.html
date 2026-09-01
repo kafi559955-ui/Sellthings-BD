@@ -1,1 +1,273 @@
 
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SellThings BD</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f5f6f7;color:#222;padding-bottom:70px}
+header{background:#fff;padding:12px;border-bottom:1px solid #ddd;position:sticky;top:0;z-index:5}
+.location{font-size:16px;font-weight:bold;margin-bottom:10px}
+.search{width:100%;padding:12px;border:1px solid #ccc;border-radius:7px;font-size:15px}
+h3{padding:0 12px}
+.categories{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px}
+.cat{background:#fff;border:1px solid #ddd;border-radius:8px;padding:13px 5px;text-align:center;font-size:13px}
+.posts{padding:5px 10px}
+.post{background:#fff;margin:9px 0;padding:10px;border-radius:8px;border:1px solid #ddd}
+.post img{width:100%;height:180px;object-fit:cover;border-radius:6px}
+.price{font-size:18px;font-weight:bold;margin-top:7px}
+.bottom{position:fixed;bottom:0;left:0;right:0;height:65px;background:#fff;border-top:1px solid #ccc;display:flex;justify-content:space-around;z-index:10}
+.bottom button{border:0;background:none;font-size:12px}
+.bottom b{display:block;font-size:22px}
+.page{display:none;padding-bottom:20px}
+.page.active{display:block}
+form{background:#fff;margin:12px;padding:15px;border-radius:8px}
+input,select,textarea{width:100%;padding:11px;margin:7px 0;border:1px solid #ccc;border-radius:6px}
+textarea{height:90px}
+.submit{width:100%;padding:13px;border:0;border-radius:7px;background:#087f5b;color:#fff;font-size:16px}
+</style>
+</head>
+
+<body>
+
+<div id="home" class="page active">
+<header>
+<div class="location">📍 <span id="loc">আপনার লোকেশন নির্বাচন করুন</span></div>
+<input class="search" id="search" placeholder="🔍 কী খুঁজছেন?">
+</header>
+
+<h3>📂 ক্যাটাগরি</h3>
+<div class="categories" id="categories"></div>
+
+<h3>🛍️ সব পোস্ট</h3>
+<div class="posts" id="posts"></div>
+</div>
+
+<div id="sell" class="page">
+<h3>➕ বিক্রি করুন</h3>
+<form id="sellForm">
+<input id="title" placeholder="কী বিক্রি করছেন?" required>
+
+<select id="category" required>
+<option value="">ক্যাটাগরি নির্বাচন করুন</option>
+</select>
+
+<input id="price" type="number" placeholder="দাম (টাকা)" required>
+<input id="age" placeholder="বয়স">
+<input id="quantity" placeholder="পরিমাণ" required>
+
+<select id="division" required>
+<option value="">বিভাগ নির্বাচন করুন</option>
+<option>ঢাকা</option>
+<option>চট্টগ্রাম</option>
+<option>রাজশাহী</option>
+<option>খুলনা</option>
+<option>বরিশাল</option>
+<option>সিলেট</option>
+<option>রংপুর</option>
+<option>ময়মনসিংহ</option>
+</select>
+
+<input id="district" placeholder="জেলা" required>
+<input id="area" placeholder="এলাকা" required>
+<input id="image" type="file" accept="image/*">
+<textarea id="description" placeholder="বিস্তারিত লিখুন"></textarea>
+
+<button class="submit">📤 পোস্ট প্রকাশের জন্য পাঠান</button>
+</form>
+</div>
+
+<div id="categoryPage" class="page">
+<h3 id="catTitle">ক্যাটাগরি</h3>
+<div class="posts" id="catPosts"></div>
+</div>
+
+<div id="chat" class="page">
+<h3>💬 চ্যাট</h3>
+<div style="padding:12px">এখানে ক্রেতা ও বিক্রেতার চ্যাট দেখা যাবে।</div>
+</div>
+
+<div id="account" class="page">
+<h3>👤 আমার অ্যাকাউন্ট</h3>
+<div style="padding:12px">
+<p>মাসে প্রথম ২টি পোস্ট ফ্রি।</p>
+<p>এর বেশি পোস্টের জন্য: <b>১৯৯ টাকা/মাস</b></p>
+</div>
+</div>
+
+<nav class="bottom">
+<button onclick="show('home')"><b>🏠</b>হোম</button>
+<button onclick="show('categoryPage');loadCategories()"><b>📂</b>ক্যাটাগরি</button>
+<button onclick="show('sell')"><b>➕</b>বিক্রি করুন</button>
+<button onclick="show('chat')"><b>💬</b>চ্যাট</button>
+<button onclick="show('account')"><b>👤</b>অ্যাকাউন্ট</button>
+</nav>
+
+<script>
+const categories=[
+"📱 মোবাইল ও ট্যাবলেট",
+"💻 কম্পিউটার ও ল্যাপটপ",
+"📺 ইলেকট্রনিক্স",
+"🚗 গাড়ি",
+"🏍️ মোটরবাইক",
+"🐄 গবাদি পশু ও পাখি",
+"🏠 বাড়ি ও জমি",
+"🪑 ফার্নিচার",
+"👕 ফ্যাশন ও পোশাক",
+"🧊 হোম অ্যাপ্লায়েন্স",
+"📚 বই ও শিক্ষা",
+"⚽ খেলাধুলার সামগ্রী",
+"🎸 বাদ্যযন্ত্র",
+"🛠️ ব্যবসা ও শিল্প সরঞ্জাম",
+"🌾 কৃষি সরঞ্জাম",
+"👶 শিশুদের জিনিস",
+"💼 চাকরি ও সেবা",
+"🎁 অন্যান্য"
+];
+
+let posts=JSON.parse(localStorage.getItem("sellthings_posts")||"[]");
+
+function show(id){
+ document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
+ document.getElementById(id).classList.add("active");
+}
+
+function renderCategories(){
+ const box=document.getElementById("categories");
+ box.innerHTML="";
+ categories.forEach((c,i)=>{
+  const b=document.createElement("button");
+  b.className="cat";
+  b.textContent=(i+1)+". "+c;
+  b.onclick=()=>filterCategory(c);
+  box.appendChild(b);
+ });
+ const select=document.getElementById("category");
+ categories.forEach(c=>{
+  const o=document.createElement("option");
+  o.value=c;o.textContent=c;
+  select.appendChild(o);
+ });
+}
+
+function renderPosts(list=posts){
+ const box=document.getElementById("posts");
+ box.innerHTML=list.length?"":"<p style='padding:12px'>এখনো কোনো পোস্ট নেই।</p>";
+ list.slice().reverse().forEach(p=>{
+  const d=document.createElement("div");
+  d.className="post";
+  d.innerHTML=`
+  ${p.image?`<img src="${p.image}">`:""}
+  <div class="price">৳ ${Number(p.price).toLocaleString("bn-BD")}</div>
+  <b>${escapeHTML(p.title)}</b>
+  <div>📍 ${escapeHTML(p.area)}, ${escapeHTML(p.district)}</div>
+  <div>🎂 ${escapeHTML(p.age||"উল্লেখ নেই")} • 🔢 ${escapeHTML(p.quantity)}</div>
+  <small>🛡️ Admin Approval-এর অপেক্ষায়</small>`;
+  box.appendChild(d);
+ });
+}
+
+function filterCategory(c){
+ show("categoryPage");
+ document.getElementById("catTitle").textContent=c;
+ const box=document.getElementById("catPosts");
+ const list=posts.filter(p=>p.category===c);
+ box.innerHTML=list.length?"":"<p>এই বিভাগে কোনো পোস্ট নেই।</p>";
+ list.slice().reverse().forEach(p=>{
+  const d=document.createElement("div");
+  d.className="post";
+  d.innerHTML=`<div class="price">৳ ${Number(p.price).toLocaleString("bn-BD")}</div>
+  <b>${escapeHTML(p.title)}</b><div>📍 ${escapeHTML(p.area)}, ${escapeHTML(p.district)}</div>`;
+  box.appendChild(d);
+ });
+}
+
+function loadCategories(){
+ const box=document.getElementById("catPosts");
+ box.innerHTML="";
+ categories.forEach((c,i)=>{
+  const b=document.createElement("button");
+  b.className="cat";
+  b.style.width="100%";
+  b.style.marginBottom="8px";
+  b.textContent=(i+1)+". "+c;
+  b.onclick=()=>filterCategory(c);
+  box.appendChild(b);
+ });
+}
+
+document.getElementById("sellForm").addEventListener("submit",function(e){
+ e.preventDefault();
+
+ if(posts.filter(p=>p.owner==="user").length>=2){
+  alert("এই মাসে আপনার ২টি ফ্রি পোস্ট শেষ হয়েছে।");
+  return;
+ }
+
+ const file=document.getElementById("image").files[0];
+
+ function save(image){
+  const p={
+   owner:"user",
+   title:title.value,
+   category:category.value,
+   price:price.value,
+   age:age.value,
+   quantity:quantity.value,
+   division:division.value,
+   district:district.value,
+   area:area.value,
+   description:description.value,
+   image:image,
+   approved:false
+  };
+
+  posts.push(p);
+  localStorage.setItem("sellthings_posts",JSON.stringify(posts));
+  alert("পোস্টটি Admin Approval-এর জন্য পাঠানো হয়েছে।");
+  e.target.reset();
+  renderPosts();
+  show("home");
+ }
+
+ if(file){
+  const reader=new FileReader();
+  reader.onload=()=>save(reader.result);
+  reader.readAsDataURL(file);
+ }else save("");
+});
+
+document.getElementById("search").addEventListener("input",function(){
+ const q=this.value.toLowerCase();
+ renderPosts(posts.filter(p=>
+  p.title.toLowerCase().includes(q)||
+  p.category.toLowerCase().includes(q)||
+  p.area.toLowerCase().includes(q)||
+  p.district.toLowerCase().includes(q)
+ ));
+});
+
+document.getElementById("loc").onclick=()=>{
+ const l=prompt("আপনার লোকেশন লিখুন:");
+ if(l){
+  document.getElementById("loc").textContent=l;
+  localStorage.setItem("sellthings_location",l);
+ }
+};
+
+function escapeHTML(s){
+ return String(s).replace(/[&<>"']/g,m=>({
+ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+ }[m]));
+}
+
+const saved=localStorage.getItem("sellthings_location");
+if(saved)document.getElementById("loc").textContent=saved;
+
+renderCategories();
+renderPosts();
+</script>
+</body>
+</html>
